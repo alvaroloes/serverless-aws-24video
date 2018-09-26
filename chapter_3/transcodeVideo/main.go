@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,7 +15,17 @@ import (
 var awsSession = session.Must(session.NewSession())
 var transcoder = elastictranscoder.New(awsSession, aws.NewConfig().WithRegion("us-east-1"))
 
-func createTranscoderJobOnNewS3Video(ctx context.Context, event events.S3Event) error {
+// Create an interface and a wrapper to be able to test the function with a mock transcoder
+func createTranscoderJobOnNewS3VideoWrap(event events.S3Event) error {
+	return createTranscoderJobOnNewS3Video(event, transcoder)
+}
+
+type CreateJober interface {
+	// Only need this method -> only depend on this method
+	CreateJob(input *elastictranscoder.CreateJobInput) (*elastictranscoder.CreateJobResponse, error)
+}
+
+func createTranscoderJobOnNewS3Video(event events.S3Event, jobCreator CreateJober) error {
 	log.Printf("Received the following event:\n %+v", event)
 
 	// Get and unescape the input file (replace spaces by '+' prior unescaping)
@@ -51,7 +60,7 @@ func createTranscoderJobOnNewS3Video(ctx context.Context, event events.S3Event) 
 		},
 	}
 
-	job, err := transcoder.CreateJob(params)
+	job, err := jobCreator.CreateJob(params)
 	if err != nil {
 		return err
 	}
@@ -62,5 +71,5 @@ func createTranscoderJobOnNewS3Video(ctx context.Context, event events.S3Event) 
 }
 
 func main() {
-	lambda.Start(createTranscoderJobOnNewS3Video)
+	lambda.Start(createTranscoderJobOnNewS3VideoWrap)
 }
