@@ -13,6 +13,9 @@ import (
 	"strings"
 )
 
+var awsSession = session.Must(session.NewSession())
+var transcoder = elastictranscoder.New(awsSession, aws.NewConfig().WithRegion("us-east-1"))
+
 func createTranscoderJobOnNewS3Video(ctx context.Context, event events.S3Event) error {
 	log.Printf("Received the following event:\n %+v", event)
 
@@ -47,13 +50,6 @@ func createTranscoderJobOnNewS3Video(ctx context.Context, event events.S3Event) 
 			},
 		},
 	}
-
-	// Create the transcoder
-	awsSession, err := session.NewSession()
-	if err != nil {
-		return err
-	}
-	var transcoder = elastictranscoder.New(awsSession, aws.NewConfig().WithRegion("us-east-1"))
 
 	job, err := transcoder.CreateJob(params)
 	if err != nil {
