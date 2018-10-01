@@ -65,7 +65,7 @@ func createTranscoderJobOnNewS3Video(event events.S3Event, jobCreator CreateJobe
 		return err
 	}
 
-	log.Printf("Job created successfully: %+v", job)
+	log.Printf("Job created successfully: %+v\n", job)
 
 	return nil
 }
