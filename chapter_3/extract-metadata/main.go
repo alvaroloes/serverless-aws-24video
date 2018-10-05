@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -11,6 +12,8 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -47,7 +50,14 @@ func mainHandler(event events.SNSEvent) error {
 		return err
 	}
 
-	err = extractMetadata(videoFilename)
+	// Extract metadata from the file we have just saved
+	metadata, err := extractMetadata(videoFilename)
+	if err != nil {
+		return err
+	}
+
+	metadataFilename := strings.TrimSuffix(inputFileName, path.Ext(inputFileName)) + ".json"
+	err = saveMetadataToS3(metadata, bucketName, metadataFilename)
 
 	return nil
 }
@@ -77,6 +87,21 @@ func saveS3FileToFilesystem(bucketName, inputFileName, outputFilename string) er
 	return err
 }
 
-func extractMetadata(videFilename string) error {
-	return nil
+func extractMetadata(videoFilename string) ([]byte, error) {
+	log.Println("Extracting metadata from", videoFilename)
+
+	cmd := exec.Command("./bin/ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", `"`+videoFilename+`"`)
+	return cmd.Output()
+}
+
+func saveMetadataToS3(metadata []byte, bucketName string, filename string) error {
+	log.Println("Saving metadata to S3 file", filename, "in bucket", bucketName)
+
+	bytes.NewReader(metadata)
+	_, err := s3Manager.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(filename),
+		Body:   bytes.NewReader(metadata),
+	})
+	return err
 }
