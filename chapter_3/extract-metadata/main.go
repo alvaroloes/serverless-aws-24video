@@ -90,8 +90,9 @@ func saveS3FileToFilesystem(bucketName, inputFileName, outputFilename string) er
 func extractMetadata(videoFilename string) ([]byte, error) {
 	log.Println("Extracting metadata from", videoFilename)
 
-	cmd := exec.Command("./bin/ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", `"`+videoFilename+`"`)
-	return cmd.Output()
+	return exec.
+		Command("bin/ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", videoFilename).
+		Output()
 }
 
 func saveMetadataToS3(metadata []byte, bucketName string, filename string) error {

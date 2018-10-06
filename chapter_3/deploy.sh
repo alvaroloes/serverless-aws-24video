@@ -19,8 +19,15 @@ go test -vet all
 echo "-> Compiling..."
 GOOS=linux GOARCH=amd64 go build -o ./deploy/${FUNCTION_NAME} main.go
 
+echo "-> Copying binary files if any"
+if [ -d ./bin ]; then
+   cp -R ./bin ./deploy/
+fi
+
 echo "-> Zipping..."
-zip -j ./deploy/${FUNCTION_NAME}.zip ./deploy/${FUNCTION_NAME}
+cd ./deploy
+zip -r ${FUNCTION_NAME}.zip ./*
+cd ..
 
 echo "-> Deploying..."
 aws lambda update-function-code \
