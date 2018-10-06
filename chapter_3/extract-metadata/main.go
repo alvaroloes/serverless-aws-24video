@@ -98,7 +98,6 @@ func extractMetadata(videoFilename string) ([]byte, error) {
 func saveMetadataToS3(metadata []byte, bucketName string, filename string) error {
 	log.Println("Saving metadata to S3 file", filename, "in bucket", bucketName)
 
-	bytes.NewReader(metadata)
 	_, err := s3Manager.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(filename),
